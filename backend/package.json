@@ -21,7 +21,7 @@
     "prisma:migrate:prod": "prisma migrate deploy",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate || true"
     },
     "prisma": {
         "seed": "ts-node prisma/seed.ts"
