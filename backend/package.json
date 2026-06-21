@@ -4,7 +4,7 @@
     "private": true,
     "description": "AI Tools Directory - NestJS Backend",
     "scripts": {
-    "build": "nest build && prisma generate",
+    "build": "npx nest build && prisma generate",
     "build:prod": "prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

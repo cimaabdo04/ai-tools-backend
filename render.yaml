@@ -2,9 +2,9 @@ services:
   - type: web
     name: ai-tools-backend
     runtime: node
-    repo: https://github.com/YOUR_USERNAME/YOUR_REPO
+    repo: https://github.com/cimaabdo04/ai-tools-backend
     branch: main
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: bash start.sh
     healthCheckPath: /api/v1/health
     envVars:
