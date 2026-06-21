@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-tools-backend
+    runtime: node
+    repo: https://github.com/YOUR_USERNAME/YOUR_REPO
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: bash start.sh
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: ENABLE_SWAGGER
+        value: "false"

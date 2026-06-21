@@ -1,0 +1,26 @@
+node_modules/
+dist/
+.next/
+*.env
+.env.local
+.env.production
+*.log
+logs/
+uploads/*
+!uploads/.gitkeep
+coverage/
+.turbo/
+.cache/
+*.tsbuildinfo
+prisma/*.db
+# prisma/migrations/  # must be committed for prisma migrate deploy
+docker/data/
+*.sqlite
+*.sqlite3
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

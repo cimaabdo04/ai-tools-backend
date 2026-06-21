@@ -1,0 +1,843 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  VENDOR
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum ToolStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum NotificationType {
+  SYSTEM
+  REVIEW
+  BOOKMARK
+  SUBSCRIPTION
+  PAYMENT
+  MESSAGE
+  REPORT
+  CLAIM
+  EDIT
+  PROMOTION
+}
+
+enum PaymentProvider {
+  STRIPE
+  PAYPAL
+  PADDLE
+  LEMONSQUEEZY
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  EXPIRED
+  INCOMPLETE
+}
+
+enum ReportStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  emailVerified    Boolean    @default(false)
+  passwordHash     String?
+  name             String?
+  username         String?    @unique
+  avatarUrl        String?
+  bio              String?
+  website          String?
+  socialLinks      String     @default("{}")
+  role             UserRole   @default(USER)
+  status           UserStatus @default(PENDING_VERIFICATION)
+  locale           String     @default("en")
+  timezone         String     @default("UTC")
+  twoFactorSecret  String?
+  twoFactorEnabled Boolean    @default(false)
+  refreshToken     String?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
+  metadata         String     @default("{}")
+
+  tools                Tool[]
+  reviews              Review[]
+  bookmarks            Bookmark[]
+  collections          Collection[]
+  apiKeys              ApiKey[]
+  notifications        Notification[]
+  sentMessages         Message[]             @relation("SentMessages")
+  receivedMessages     Message[]             @relation("ReceivedMessages")
+  reports              Report[]
+  claimRequests        ClaimRequest[]
+  pendingEdits         PendingEdit[]
+  auditLogs            AuditLog[]
+  subscriptions        Subscription[]
+  payments             Payment[]
+  analyticEvents       AnalyticEvent[]
+  banners              Banner[]
+  affiliateLinks      AffiliateLink[]
+  affiliateApplication AffiliateApplication?
+  referredUsers       AffiliateLink[]     @relation("ReferredUsers")
+  referredBy          String?
+  referredAt          DateTime?
+  referredCountry     String?
+  referredClickId     String?
+  affiliateLevelId    String?
+  affiliateLevel      AffiliateLevel?     @relation(fields: [affiliateLevelId], references: [id])
+  withdrawals         AffiliateWithdrawal[]
+  sessions            Session[]
+  sponsoredListings   SponsoredListing[]
+  featuredHistories   FeaturedHistory[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AffiliateApplication {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            String    @default("pending")
+  platforms         String    @default("[]")
+  fullName          String?
+  phone             String?
+  country           String?
+  paypalEmail       String?
+  cryptoType        String?
+  cryptoAddress     String?
+  cryptoNetwork     String?
+  contactForPayment Boolean   @default(false)
+  note              String?
+  adminNote         String?
+  maxManualLinks    Int       @default(3)
+  approvedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model AffiliateClick {
+  id            String    @id @default(uuid())
+  linkId        String
+  link          AffiliateLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  ip            String?
+  country       String?
+  userAgent     String?
+  deviceType    String?
+  referer       String?
+  source        String?
+  token         String?   @unique
+  converted     Boolean   @default(false)
+  convertedAt   DateTime?
+  clickValue    Float     @default(0.0)
+  createdAt     DateTime  @default(now())
+}
+
+model AffiliateCountryRate {
+  id              String   @id @default(uuid())
+  countryCode     String   @unique
+  countryName     String
+  clickValue      Float    @default(0.001)
+  conversionValue Float    @default(1.0)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model AffiliateLevel {
+  id              String   @id @default(uuid())
+  level           Int      @unique
+  name            String
+  minConversions  Int      @default(0)
+  minEarnings     Float    @default(0)
+  commissionRate  Float    @default(0.20)
+  users           User[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String   @unique
+  ipAddress    String?
+  userAgent    String?
+  deviceInfo   String   @default("{}")
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+}
+
+model Tool {
+  id              String  @id @default(uuid())
+  name            String
+  nameAr          String?
+  slug            String  @unique
+  tagline         String
+  taglineAr       String?
+  description     String
+  descriptionAr   String?
+  websiteUrl      String
+  logoUrl         String?
+  screenshotUrl   String?
+  videoUrl        String?
+  pricingTypes    String    @default("[]")
+  pricingMin      Float?
+  pricingMax      Float?
+  pricingDetails  String      @default("{}")
+  badge           String?
+  highlight       String?
+  stats           String      @default("{}")
+  models          String      @default("[]")
+  gallery         String      @default("[]")
+  country         String?
+  version         String?
+  releases        String      @default("[]")
+  alternativesText String?
+  alternativeSlugs String      @default("[]")
+  startSteps      String      @default("[]")
+  conclusion      String?
+  features        String      @default("[]")
+  useCases        String      @default("[]")
+  platforms       String      @default("[]")
+  openSource      Boolean   @default(false)
+  githubUrl       String?
+  twitterUrl      String?
+  discordUrl      String?
+  status          ToolStatus @default(PENDING_REVIEW)
+  isFeatured      Boolean @default(false)
+  isSponsored     Boolean @default(false)
+  isVerified      Boolean @default(false)
+  viewCount       Int     @default(0)
+  clickCount      Int     @default(0)
+  helpfulCount    Int     @default(0)
+  notHelpfulCount Int     @default(0)
+  averageRating   Float   @default(0.0)
+  reviewCount     Int     @default(0)
+  bookmarkCount   Int     @default(0)
+  rankScore       Float   @default(0.0)
+  seoTitle        String?
+  seoDescription  String?
+  metaKeywords    String?
+  arabicSupport   String?
+  pros            String   @default("[]")
+  cons            String   @default("[]")
+  canonicalUrl    String?
+  schemaMarkup    String    @default("{}")
+  metadata        String    @default("{}")
+  publishedAt     DateTime?
+  submittedAt     DateTime @default(now())
+
+  authorId        String
+  author          User    @relation(fields: [authorId], references: [id])
+  tags            ToolTag[]
+  toolCategories  ToolCategory[]
+  reviews         Review[]
+  bookmarks       Bookmark[]
+  collectionTools CollectionTool[]
+  sponsoredListings SponsoredListing[]
+  featuredHistories FeaturedHistory[]
+  analyticEvents  AnalyticEvent[]
+  pendingEdits    PendingEdit[]
+  faqs            ToolFAQ[]
+  reports         Report[] @relation("ReportedTool")
+  claimRequests   ClaimRequest[]
+  compareItems    CompareItem[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ToolFAQ {
+  id        String   @id @default(uuid())
+  toolId    String
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tool Tool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@map("tool_faqs")
+}
+
+model Category {
+  id             String     @id @default(uuid())
+  name           String     @unique
+  slug           String     @unique
+  description    String?
+  icon           String?
+  color          String     @default("#6366f1")
+  imageUrl       String?
+  parentId       String?
+  parent         Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children       Category[] @relation("CategoryHierarchy")
+  toolCount      Int        @default(0)
+  sortOrder      Int        @default(0)
+  isActive       Boolean    @default(true)
+  seoTitle       String?
+  seoDescription String?
+  metadata       String       @default("{}")
+
+  toolCategories ToolCategory[]
+  tags           Tag[]
+
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model Tag {
+  id             String    @id @default(uuid())
+  name           String
+  slug           String
+  description    String?
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id])
+  toolCount      Int       @default(0)
+  isActive       Boolean   @default(true)
+  metadata       String      @default("{}")
+
+  tools          ToolTag[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([name, categoryId])
+}
+
+model ToolTag {
+  toolId    String
+  tool      Tool    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([toolId, tagId])
+}
+
+model ToolCategory {
+  toolId     String
+  tool       Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@id([toolId, categoryId])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  title     String
+  content   String
+  rating    Int
+  pros      String     @default("[]")
+  cons      String     @default("[]")
+  isVerified Boolean @default(false)
+  helpfulCount Int   @default(0)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, toolId])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid())
+  note      String?
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, toolId])
+}
+
+model Collection {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  slug        String          @unique
+  isPublic    Boolean         @default(true)
+  coverUrl    String?
+  sortOrder   Int             @default(0)
+
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tools       CollectionTool[]
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model CollectionTool {
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  toolId       String
+  tool         Tool       @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  note         String?
+  sortOrder    Int        @default(0)
+  addedAt      DateTime   @default(now())
+
+  @@id([collectionId, toolId])
+}
+
+model SponsoredListing {
+  id          String   @id @default(uuid())
+  toolId      String
+  tool        Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  planType    String
+  status      String     @default("PENDING")
+  startDate   DateTime
+  endDate     DateTime
+  amount      Float
+  currency    String     @default("USD")
+  paymentId   String?
+  impressions Int        @default(0)
+  clicks      Int        @default(0)
+  metadata    String       @default("{}")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FeaturedHistory {
+  id        String   @id @default(uuid())
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  startDate DateTime
+  endDate   DateTime
+  amount    Float
+  metadata  String     @default("{}")
+
+  createdAt DateTime @default(now())
+}
+
+model PricingPlan {
+  id              String         @id @default(uuid())
+  name            String         @unique
+  slug            String         @unique
+  description     String?
+  features        String           @default("[]")
+  limits          String           @default("{}")
+  monthlyPrice    Float?
+  yearlyPrice     Float?
+  currency        String         @default("USD")
+  isActive        Boolean        @default(true)
+  isPopular       Boolean        @default(false)
+  sortOrder       Int            @default(0)
+  stripePriceId   String?
+  stripeYearlyPriceId String?
+  paypalPlanId    String?
+  paddlePriceId   String?
+  lemonsqueezyVariantId String?
+  metadata        String           @default("{}")
+
+  subscriptions   Subscription[]
+
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Subscription {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId            String
+  plan              PricingPlan @relation(fields: [planId], references: [id])
+  status            SubscriptionStatus @default(TRIALING)
+  provider          PaymentProvider
+  providerSubscriptionId String?
+  providerCustomerId     String?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  trialEndsAt        DateTime?
+  canceledAt         DateTime?
+  metadata           String               @default("{}")
+
+  payments           Payment[]
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Payment {
+  id                String    @id @default(uuid())
+  userId            String
+  user              User      @relation(fields: [userId], references: [id])
+  subscriptionId    String?
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
+  provider          PaymentProvider
+  providerPaymentId String?
+  providerInvoiceId String?
+  amount            Float
+  currency          String    @default("USD")
+  status            String
+  description       String?
+  metadata          String      @default("{}")
+
+  createdAt         DateTime  @default(now())
+}
+
+model ApiKey {
+  id            String   @id @default(uuid())
+  name          String
+  key           String   @unique
+  prefix        String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permissions   String     @default("[\"read:tools\"]")
+  requestsCount Int      @default(0)
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  isActive      Boolean  @default(true)
+  ipWhitelist   String     @default("[]")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AnalyticEvent {
+  id          String   @id @default(uuid())
+  eventType   String
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  toolId      String?
+  tool        Tool?    @relation(fields: [toolId], references: [id])
+  sessionId   String?
+  ipAddress   String?
+  userAgent   String?
+  referrer    String?
+  country     String?
+  city        String?
+  deviceType  String?
+  browser     String?
+  os          String?
+  metadata    String     @default("{}")
+
+  timestamp   DateTime @default(now())
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  message   String
+  data      String             @default("{}")
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  subject   String
+  content   String
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id          String   @id @default(uuid())
+  reason      String
+  description String?
+  status      ReportStatus @default(PENDING)
+  reviewedBy  String?
+  reviewNote  String?
+  resolvedAt  DateTime?
+
+  reporterId  String
+  reporter    User     @relation(fields: [reporterId], references: [id])
+  toolId      String
+  tool        Tool     @relation("ReportedTool", fields: [toolId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ClaimRequest {
+  id            String   @id @default(uuid())
+  toolId        String
+  tool          Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  status        String   @default("PENDING")
+  evidence      String?
+  notes         String?
+  reviewedBy    String?
+  reviewNote    String?
+  decidedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PendingEdit {
+  id            String   @id @default(uuid())
+  toolId        String
+  tool          Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  changes       String
+  status        String     @default("PENDING")
+  reviewedBy    String?
+  reviewNote    String?
+  decidedAt     DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String
+  entity      String
+  entityId    String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  metadata    String     @default("{}")
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+}
+
+model Banner {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  imageUrl    String?
+  htmlContent String?
+  linkUrl     String?
+  placement   String
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  metadata    String     @default("{}")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AffiliateLink {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commissionRate Float    @default(0.20)
+  totalEarned    Float    @default(0.0)
+  totalClicks    Int      @default(0)
+  totalConversions Int    @default(0)
+  isActive       Boolean  @default(true)
+  isAutoGenerated Boolean  @default(false)
+  metadata       String     @default("{}")
+
+  referredUsers  User[]    @relation("ReferredUsers")
+  clicks         AffiliateClick[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AffiliateWithdrawal {
+  id                String    @id @default(uuid())
+  affiliateUserId   String
+  affiliate         User      @relation(fields: [affiliateUserId], references: [id], onDelete: Cascade)
+  amount            Float
+  status            String    @default("PENDING")
+  paymentMethod     String?
+  paymentDetails    String?
+  adminNote         String?
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model CompareItem {
+  id        String   @id @default(uuid())
+  sessionId String?
+  userId    String?
+  toolId    String
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Page {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  content     String     @default("{}")
+  template    String   @default("default")
+  published   Boolean  @default(false)
+  locale      String   @default("en")
+  seoTitle    String?
+  seoDescription String?
+  metadata    String     @default("{}")
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Translation {
+  id        String   @id @default(uuid())
+  key       String
+  locale    String
+  value     String
+  namespace String   @default("common")
+  group     String?
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([key, locale, namespace])
+}
+
+model BlogPost {
+  id            String   @id @default(uuid())
+  title         String
+  slug          String   @unique
+  excerpt       String?
+  content       String
+  coverImage    String?
+  videoUrl      String?
+  authorId      String
+  authorName    String
+  published     Boolean  @default(false)
+  publishedAt   DateTime?
+  tags          String     @default("[]")
+  viewCount     Int      @default(0)
+  locale        String   @default("en")
+  seoTitle      String?
+  seoDescription String?
+  canonicalUrl  String?
+  metadata      String     @default("{}")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SiteSettings {
+  id                    String   @id @default(uuid())
+  siteName              String   @default("AI Tools Directory")
+  siteDescription       String   @default("Discover, compare, and find the perfect AI tools for your needs.")
+  supportEmail          String?
+  logo                  String?
+
+  // SMTP
+  smtpHost              String?
+  smtpPort              Int      @default(587)
+  smtpUser              String?
+  smtpPass              String?
+  smtpFrom              String?
+  smtpSecure            Boolean  @default(true)
+
+  // SEO
+  metaTitle             String?
+  metaDescription       String?
+  metaKeywords          String?
+  ogImage               String?
+  canonicalUrl          String?
+
+  // Tracking
+  googleAnalyticsId     String?
+  googleTagManagerId    String?
+  googleAdsId           String?
+  googleAdsLabel        String?
+  facebookPixelId       String?
+
+  // Rate Limiting
+  rateLimitingEnabled   Boolean  @default(true)
+  rateLimitingMax       Int      @default(100)
+  rateLimitingWindow    Int      @default(60000)
+
+  // Maintenance
+  maintenanceEnabled    Boolean  @default(false)
+  maintenanceMessage    String?
+
+  // Custom scripts (head/body)
+  headerHtml            String?
+  footerHtml            String?
+
+  // Navigation & Footer (JSON arrays stored as strings)
+  navLinks              String?
+  footerLinks           String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model WhiteLabelConfig {
+  id            String   @id @default(uuid())
+  name          String   @default("AI Tools Directory")
+  logoUrl       String?
+  faviconUrl    String?
+  primaryColor  String   @default("#6366f1")
+  secondaryColor String  @default("#8b5cf6")
+  fontFamily    String   @default("Inter")
+  customDomain  String?  @unique
+  customCss     String?
+  footerHtml    String?
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+
