@@ -61,13 +61,13 @@
         "speakeasy": "^2.0.0",
         "stripe": "^17.0.0",
         "uuid": "^11.0.0",
-        "@nestjs/cli": "^11.0.0"
+        "@nestjs/cli": "^11.0.0",
+        "@swc/cli": "^0.8.1",
+        "@swc/core": "^1.15.41"
     },
     "devDependencies": {
         "@nestjs/schematics": "^11.0.0",
         "@nestjs/testing": "^11.0.0",
-        "@swc/cli": "^0.8.1",
-        "@swc/core": "^1.15.41",
         "@types/bcryptjs": "^2.4.6",
         "@types/compression": "^1.7.5",
         "@types/cookie-parser": "^1.4.7",
