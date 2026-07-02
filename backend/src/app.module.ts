@@ -38,6 +38,7 @@ import { WhiteLabelModule } from './modules/white-label/white-label.module';
 import { ImportModule } from './modules/import/import.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { HealthModule } from './modules/health/health.module';
 import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
@@ -115,6 +116,7 @@ import { UploadModule } from './modules/upload/upload.module';
     SettingsModule,
     AdminModule,
     UploadModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: CustomThrottlerGuard },
