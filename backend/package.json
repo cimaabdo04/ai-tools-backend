@@ -63,7 +63,10 @@
         "uuid": "^11.0.0",
         "@nestjs/cli": "^11.0.0",
         "@swc/cli": "^0.8.1",
-        "@swc/core": "^1.15.41"
+        "@swc/core": "^1.15.41",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "typescript": "^5.7.0"
     },
     "devDependencies": {
         "@nestjs/schematics": "^11.0.0",
